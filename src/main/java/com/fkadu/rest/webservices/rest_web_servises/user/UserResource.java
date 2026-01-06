@@ -2,12 +2,16 @@ package com.fkadu.rest.webservices.rest_web_servises.user;
 
 import com.fkadu.rest.webservices.rest_web_servises.exception.UserNotFoundException;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 public class UserResource {
@@ -21,8 +25,15 @@ public class UserResource {
     }
 
     @GetMapping("/users/{id}")
-    public User getUser(@PathVariable Long id) throws UserNotFoundException {
-        return userDaoService.getUser(id);
+    public EntityModel<User> getUser(@PathVariable Long id) throws UserNotFoundException {
+        if (userDaoService.getUser(id) == null) {
+            throw new  UserNotFoundException("User not found");
+        }
+        EntityModel<User> entityModel = EntityModel.of(userDaoService.getUser(id));
+        WebMvcLinkBuilder linkTo = WebMvcLinkBuilder.linkTo(methodOn(
+                this.getClass()).getUsers());
+        entityModel.add(linkTo.withRel("all-users"));
+        return entityModel;
     }
 
     @PostMapping("/users")
